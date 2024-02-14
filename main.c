@@ -1,6 +1,7 @@
 #include <msp430.h> 
 #include "serial_handler.h"
 #include "main.h"
+
 //#include <stdint.h>
 
 //#include "uart.h"
@@ -35,14 +36,21 @@
  *
  */
 
+//Mode 1: Catch data from upstream device
+//Mode 2: Stand alone text scroll mode
+//Mode 3: Graphic display
+//Mode 4: Game
+//Mode 5: User created text scroll
+//Mode 6: User created graphic display
+//Mode 7: Test mode (for assembly and troubleshooting)
+
 char gridArray[5] = {0x7F, 0x04, 0x18, 0x04, 0x7F};
 int isrCount = 0, scrollCount = 0;
 #define LOCKOUT_DURATION 5000 // Lockout duration in milliseconds
 int lockoutTimer = 0;
-int ModeSelect = 2;
-int TempMode = 2;
-#define ModeSelect_Duration 20000 // Timer for changing mode (press SW2)
-int ModeTimer = 3;
+int ModeSelect = 2;// sets the TechMatrix to the stand alone Text scroll on startup
+#define ModeSelect_Duration 20000 // Timer duration for changing mode (press SW2)
+int ModeTimer = 0;
 
 
 int main(void) {
@@ -91,13 +99,16 @@ int main(void) {
             tx_data_str[5] = 0x30 + (temp >> 4);
             tx_data_str[6] = 0x30 + (temp & 0x0F);
             uart_write_string(0, 7);
+            scrollPos = 0;//reset stand alone text scroll (mode 2)
         }
         if (lockoutTimer > LOCKOUT_DURATION) {
             lockoutTimer = LOCKOUT_DURATION+1;
-            ModeSelect = TempMode;
+            if(ModeSelect == 1){
+                ModeSelect = 2;// if device is still in Mode 1 without receiving new data, put TechMatrix into Mode 2
+            }
         }
         if (ModeSelect == 2){
-            //            // Stand alone text scroll mode (send)
+            // Stand alone text scroll mode (send)
             if (scrollCount >= 2000) {
                 scrollCount = 0;
                 a_val = scrollPos / 6;
@@ -123,7 +134,8 @@ int main(void) {
             }
         }
         if (ModeSelect == 3){
-            char gridArray[5] = {0x7F, 0x04, 0x18, 0x04, 0x04};
+            scrollPos = 0;      //stand alone text scroll (mode 2)
+
         }
 
     }
@@ -180,17 +192,18 @@ void timer_ISR_init(void){
 __interrupt void Port_1(void)
 {
     if (P1IFG & BIT0){
-        if (ModeSelect == 1){
+        if (lockoutTimer < LOCKOUT_DURATION){
             ModeSelect = 1;
         }
         else{
+            ModeTimer ++;
             ModeSelect ++;
-            if (ModeSelect > 4){
+            if (ModeSelect > 3){
                 ModeSelect = 2;
             }
         }
-        P1IFG &= ~BIT0;                           // P1.0 IFG cleared
 
+        P1IFG &= ~BIT0;                           // P1.0 IFG cleared
     }
     if (P1IFG & BIT3){
         P1IFG &= ~BIT3;                           // P1.4 IFG cleared
