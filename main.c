@@ -248,7 +248,24 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
     //
     //        }
     else if (stringIn[strBeg+2] == 'F'){    // Write data to Flash Memory
+        byteNum = stringIn[strBeg+3];   // number of bytes N
+        byteLoc = stringIn[strBeg+4];    // location of writning bits M
+       // flash_ptr = (char *) 0x1040;     // either 8 bits or 16 bits
+        if (byteLoc == 0){
+             Flash_ptr = (char *) 0x1040; // pointer to available register
+            // code to erase whatever is in these available registers when user hits send on phone.
+            FCTL1 = FWKEY + ERASE;                    // Set Erase bit
+		    FCTL3 = FWKEY;                            // Clear Lock bit
+		    *Flash_ptr = 0;                           // Dummy write to erase Flash segment
 
+		   FCTL1 = FWKEY + WRT;                      // Set WRT bit for write operation
+		   *Flash_ptr ++= 0xAA;
+		   *Flash_ptr ++= 1;
+		    FCTL1 = FWKEY;                            // Clear WRT bit
+		    FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
+        }
+        else if (byteloc == 1){
+              flash_ptr = (char *) 0x1050; // pointer to available register
     }
     else if (stringIn[strBeg+2] == 'R'){    // Read request
 
