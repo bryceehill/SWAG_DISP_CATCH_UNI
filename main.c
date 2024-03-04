@@ -63,7 +63,7 @@ int main(void) {
     int a_val, k_val, scrollPos=0, scrollNum, scrollMax, cat_val;
     char disp_string[] = "   Welcome to the TechMatrix! Go to mtech.edu/electrical-engineering/ today!  |";//Green
     char two_char[11] = {0,0,0,0,0,0,0,0,0,0,0};
-    char anim_frames[8] = {0x7F, 0x04, 0x18, 0x04, 0x7F, 0x5E, 0x61, 0x7F};
+    char anim_frames[] = {0x01 , 0x7F, 0x40, 0x40 ,0x7F, 0x01, 0x01, 0x7F, 0x40, 0x40, 0x7F, 0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01};
     char scrollLast=0;
     a_val = 0;
     while (scrollNum != '|')
@@ -135,11 +135,15 @@ int main(void) {
             }
         }
         if (ModeSelect == 3){//Graphic display
-            gridArray[0] = 0x5E;
-            gridArray[1] = 0x61;
-            gridArray[2] = 0x01;
-            gridArray[3] = 0x61;
-            gridArray[4] = 0x5E;
+            unsigned int k;
+            for (k=0; k<30;k=k+5){
+            gridArray[0] = anim_frames[k];
+            gridArray[1] = anim_frames[k+1];
+            gridArray[2] = anim_frames[k+2];
+            gridArray[3] = anim_frames[k+3];
+            gridArray[4] = anim_frames[k+4];
+            __delay_cycles(2000000);
+            }
             scrollPos = 0;      //stand alone text scroll (mode 2)
 
         }
