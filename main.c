@@ -116,6 +116,7 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
     // Parse for the initial string and the end string
     volatile int strBeg, strEnd,i,k,byteNum,byteRet,shiftNum,dispShift;
     volatile char tempChar;
+    char iString[] = "Tech Matrix";
     char cmpStr[2],byteOut[5],byteChar[5];
     cmpStr[0]='%';
     cmpStr[1]='*';
@@ -273,6 +274,33 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
     else if (stringIn[strBeg+2] == 'W'){    // Response from read request
 
     }
+
+    else if (stringIn[strBeg+2] == 'T'){    // Diagnostic Mode
+	ModeSelect = 7; //Enter Test Mode
+	if (stringIn[strBeg+3] == 'L'){ //Test LED Matrix 
+	}
+	if (stringIn[strBeg+3] == 'U'{//Test Uart Channels
+		if(stringIn[strBeg+4] == '1'){//Test Channel 1
+		char uartString[] = "UART 1 OK";
+		uart_write_string(0,uartString);
+		}
+		if(stringIn[strBeg+4] == '2'){//Test Channel 2
+		char uartString[] = "UART 2 OK";
+		uart_write_string_sw(0,uartString);
+		}
+	}
+	if (stringIn[strBeg+3] == 'S'){//Test Switches}
+		if(stringIn[strBeg+4] == '1'){ //Test switch 1 
+		}
+		if(stringIn[strBeg+4] == '2'){//Test switch 2
+		}
+		if(stringIn[strBeg+4] == '3'){//Test switch 3
+		}		
+	}
+	    if (stringIn[strBeg+3] == 'E'){ // Exit testing mode
+		    ModeSelect = 2;
+	    }
+	    }
     return 0;
 }
 
