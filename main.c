@@ -253,7 +253,7 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
         byteLoc = stringIn[strBeg+4];    // location of writning bits M
        // flash_ptr = (char *) 0x1040;     // either 8 bits or 16 bits
         if (byteLoc == 0){
-             Flash_ptr = (char *) 0x10FF; // pointer to available register to 0x1131 // 256 bytes 010FFh to 01000h
+             Flash_ptr = (char *) 0x10FF; // pointer to available register to 0x1131 // 256 bytes 010FFh to 01000h decending??
             // code to erase whatever is in these available registers when user hits send on phone. 1 byte = 1 charcter , 1 graphic frame = 5 bytes, limits 50-scroll 200-character 
             FCTL1 = FWKEY + ERASE;                    // Set Erase bit
 		    FCTL3 = FWKEY;                            // Clear Lock bit
@@ -266,7 +266,7 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
 		    FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
         }
         else if (byteloc == 1){
-              flash_ptr = (char *) 0x1050; // pointer to available register
+              flash_ptr = (char *) 0x10CA; // pointer to available register
     }
     else if (stringIn[strBeg+2] == 'R'){    // Read request
 
