@@ -249,14 +249,14 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
     //
     //        }
     else if (stringIn[strBeg+2] == 'F'){    // Write data to Flash Memory
-        byteNum = stringIn[strBeg+3];   // number of bytes N
-        byteLoc = stringIn[strBeg+4];    // location of writning bits M
-	byteStart = stringIn[strBeg+5];  // location of first B
+        int byteNum = stringIn[strBeg+3];   // number of bytes N
+       int byteLoc = stringIn[strBeg+4];    // location of writning bits M
+	int byteStart = stringIn[strBeg+5];  // location of first B
        // flash_ptr = (char *) 0x1040;     // either 8 bits or 16 bits
-	MAXCHARFLASH = 0x67;           // max amount of letters 100
-        MAXGRAPHFLASH = 0x99;		// max amount of graphic frames ,,1 frame = 5 bytes,,
-	regCHARStart = 0x1099;       // start for the character registers 
-	regGRAPHStart = 0x1000;     // start for the graphic registers
+	int MAXCHARFLASH = 0x67;           // max amount of letters 100
+        int MAXGRAPHFLASH = 0x99;		// max amount of graphic frames ,,1 frame = 5 bytes,,
+	int regCHARStart = 0x1099;       // start for the character registers 
+	int regGRAPHStart = 0x1000;     // start for the graphic registers
 	    
         if (byteLoc == 0){
 		FCTL1 = FWKEY + ERASE;                    // Set Erase bit
@@ -281,7 +281,7 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
 		
 		}
         
-        else if (byteloc == 1){
+        else if (byteLoc == 1){
 		
 	      byteNumGraph_ptr = (char *) byteNum
               Flash_ptr = (char *) regGRAPHStart; // pointer to available register 1097-152 to 1000h
