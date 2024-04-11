@@ -65,7 +65,7 @@ int main(void) {
     char disp_string[] = "   Welcome to the TechMatrix! Go to mtech.edu/electrical-engineering/ today!  |";//Green
     char two_char[11] = {0,0,0,0,0,0,0,0,0,0,0};
     char anim_frames[] = {0x01, 0x7F, 0x40, 0x40 ,0x7F, 0x01, 0x01, 0x7F, 0x40, 0x40, 0x7F, 0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01};
-    char game_layout[] = {0x00,0x00,0x00,0x67,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00};
+    char game_layout[] = {0x00,0x00,0x00,0x67,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C};
     char game_safezone[] = {0x10,0x20,0x40,0x04,0x02,0x01,0x08,0x77,0x6F,0x5F,0x7B,0x7E,0x7D};
     char scrollLast=0;
     a_val = 0;
@@ -189,7 +189,7 @@ int main(void) {
                     }
                 }
                 scrollPos++;
-                if (scrollPos > 5*sizeof(game_layout)){
+                if (scrollPos > 5*sizeof(game_layout)-4){
                     scrollPos = 0;
                 }
                 for (s = 0; s < 14; s++)
@@ -206,14 +206,33 @@ int main(void) {
                 }
                 if (gameover == 1)
                 {
-                    ModeSelect = 2;
+                    ModeSelect = -1;
                 }
             }
         }
-        /*if (ModeSelect == -1)
+        if (ModeSelect == -1)
         {
-            ModeSelect = 2;
-        }*/
+            unsigned int g;
+            scrollPos = 0;
+            scrollCount = 0;
+            playerpos = 0;
+            for (g = 0; g < 3; g++)
+            {
+                gridArray[0] = 0x63;
+                gridArray[1] = 0x14;
+                gridArray[2] = 0x08;
+                gridArray[3] = 0x14;
+                gridArray[4] = 0x63;
+                _delay_cycles(8000000);
+                gridArray[0] = 0x00;
+                gridArray[1] = 0x00;
+                gridArray[2] = 0x00;
+                gridArray[3] = 0x00;
+                gridArray[4] = 0x00;
+                _delay_cycles(8000000);
+            }
+            ModeSelect = 4;
+        }
     }
 }
 
@@ -285,11 +304,11 @@ __interrupt void Port_1(void)
         if (playerpos < -3){
             playerpos = -3;
         }
-    }
-    P1IFG &= ~BIT3;                           // P1.4 IFG cleared
-    while (P1IFG & BIT3)
-    {
-        _delay_cycles(80000);
+        P1IFG &= ~BIT3;                           // P1.4 IFG cleared
+        while (P1IFG & BIT3)
+           {
+               _delay_cycles(40000);
+           }
     }
 }
 
@@ -307,7 +326,7 @@ __interrupt void Port_2(void)
         P2IFG &= ~BIT6;                           // P1.0 IFG cleared
         while (P2IFG & BIT6)
         {
-            _delay_cycles(80000);
+            _delay_cycles(40000);
         }
     }
 
