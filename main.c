@@ -253,8 +253,8 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
         byteLoc = stringIn[strBeg+4];    // location of writning bits M
 	byteStart = stringIn[strBeg+5];  // location of first B
        // flash_ptr = (char *) 0x1040;     // either 8 bits or 16 bits
-	MAXCHARFLASH = 67;           // max amount of letters 100
-        MAXGRAPHFLASH = 99;		// max amount of graphic frames ,,1 frame = 5 bytes,,
+	MAXCHARFLASH = 0x67;           // max amount of letters 100
+        MAXGRAPHFLASH = 0x99;		// max amount of graphic frames ,,1 frame = 5 bytes,,
 	regCHARStart = 0x1099;       // start for the character registers 
 	regGRAPHStart = 0x1000;     // start for the graphic registers
 	    
