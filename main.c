@@ -259,8 +259,9 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
 	regGRAPHStart = 0x1000;     // start for the graphic registers
 	    
         if (byteLoc == 0){
-		 FCTL1 = FWKEY + ERASE;                    // Set Erase bit
-		    FCTL3 = FWKEY;                            // Clear Lock bit
+		FCTL1 = FWKEY + ERASE;                    // Set Erase bit
+		FCTL3 = FWKEY;                            // Clear Lock bit
+		FCTL1 = FWKEY + WRT;                      // Set WRT bit for write operation
 		    byteNumText_ptr = (char *) byteNum
              Flash_ptr = (char *) regCHARStart; 
 		for (k = 0;k < byteNum;k++){
@@ -273,7 +274,7 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
             // code to erase whatever is in these available registers when user hits send on phone. 1 byte = 1 charcter , 1 graphic frame = 5 bytes, limits 100-scroll ,, 150-character = 30 frames
           		
 				
-		   FCTL1 = FWKEY + WRT;                      // Set WRT bit for write operation
+		   
 		   FCTL1 = FWKEY;                            // Clear WRT bit
 		   FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
 		
@@ -281,20 +282,24 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
 		}
         
         else if (byteloc == 1){
-		for (k = 0;k < byteNum;k++){
+		
 	      byteNumGraph_ptr = (char *) byteNum
               Flash_ptr = (char *) regGRAPHStart; // pointer to available register 1097-152 to 1000h
 		    FCTL1 = FWKEY + ERASE;                    // Set Erase bit
 		    FCTL3 = FWKEY;                            // Clear Lock bit
-		    *Flash_ptr = 0;                           // Dummy write to erase Flash segment
-
+		    FCTL1 = FWKEY + WRT;                      // Set WRT bit for write operation
+		for (k = 0;k < byteNum;k++){
+			if ((k+byteStart)<MAXCHARFLASH) {
+			  *Flash_ptr[k] = stringIn[strBeg+5+k];
+				}
+							
+				}
 		   FCTL1 = FWKEY + WRT;                      // Set WRT bit for write operation
-		   *Flash_ptr ++= 0xAA;
-		   *Flash_ptr ++= 1;
+		 
 		    FCTL1 = FWKEY;                            // Clear WRT bit
 		    FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
 		}
-    }
+    
     }
     else if (stringIn[strBeg+2] == 'R'){    // Read request
 
