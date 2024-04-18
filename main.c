@@ -39,6 +39,7 @@
 char gridArray[5] = {0x7F, 0x04, 0x18, 0x04, 0x7F};
 char currChar = ' ';
 int isrCount = 0,scrollCount = 0;
+volatile char myVec[10];
 
 int main(void){
     WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
@@ -250,56 +251,35 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
     //        }
     else if (stringIn[strBeg+2] == 'F'){    // Write data to Flash Memory
         int byteNum = stringIn[strBeg+3];   // number of bytes N
-       int byteLoc = stringIn[strBeg+4];    // location of writning bits M
-	int byteStart = stringIn[strBeg+5];  // location of first B
-       // flash_ptr = (char *) 0x1040;     // either 8 bits or 16 bits
-	int MAXCHARFLASH = 0x67;           // max amount of letters 100
-        int MAXGRAPHFLASH = 0x99;		// max amount of graphic frames ,,1 frame = 5 bytes,,
-	int regCHARStart = 0x1099;       // start for the character registers 
-	int regGRAPHStart = 0x1000;     // start for the graphic registers
-	    
+        int byteLoc = stringIn[strBeg+4];    // location of writning bits M
+        int byteStart = stringIn[strBeg+5];  // location of first B
+        volatile char k;
+        int regStart;
+        volatile int mode;
+
+        int MAXCHARFLASH = 100;           // max amount of letters 100
+        int MAXGRAPHFLASH = 150;        // max amount of graphic frames ,,1 frame = 5 bytes,,
+
+        for (k = 0;k < byteNum;k++){
+            myVec[k] = stringIn[strBeg+5+k];
+
+        }
+
+        FCTL2 = FWKEY + FSSEL0 +
+                (FN1*16);             // MCLK/3 for Flash Timing Generator
+
         if (byteLoc == 0){
-		FCTL1 = FWKEY + ERASE;                    // Set Erase bit
-		FCTL3 = FWKEY;                            // Clear Lock bit
-		FCTL1 = FWKEY + WRT;                      // Set WRT bit for write operation
-		    byteNumText_ptr = (char *) byteNum
-             Flash_ptr = (char *) regCHARStart; 
-		for (k = 0;k < byteNum;k++){
-			if ((k+byteStart)<MAXCHARFLASH) {
-			  *Flash_ptr[k] = stringIn[strBeg+5+k];
-				}
-							
-				}
-	     // pointer to available register 10FF-102 to 0x1099 // 256 bytes 010FFh to 01000h decending??
-            // code to erase whatever is in these available registers when user hits send on phone. 1 byte = 1 charcter , 1 graphic frame = 5 bytes, limits 100-scroll ,, 150-character = 30 frames
-          		
-				
-		   
-		   FCTL1 = FWKEY;                            // Clear WRT bit
-		   FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
-		
-		
-		}
-        
+            regStart = regCHARStart;
+
+        }
+
         else if (byteLoc == 1){
-		
-	      byteNumGraph_ptr = (char *) byteNum
-              Flash_ptr = (char *) regGRAPHStart; // pointer to available register 1097-152 to 1000h
-		    FCTL1 = FWKEY + ERASE;                    // Set Erase bit
-		    FCTL3 = FWKEY;                            // Clear Lock bit
-		    FCTL1 = FWKEY + WRT;                      // Set WRT bit for write operation
-		for (k = 0;k < byteNum;k++){
-			if ((k+byteStart)<MAXCHARFLASH) {
-			  *Flash_ptr[k] = stringIn[strBeg+5+k];
-				}
-							
-				}
-		   FCTL1 = FWKEY + WRT;                      // Set WRT bit for write operation
-		 
-		    FCTL1 = FWKEY;                            // Clear WRT bit
-		    FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
-		}
-    
+            regStart = regGRAPHStart;
+
+        }
+
+        mode = memory_mode(0,regStart,myVec,byteNum);//  Open memory and write (0) or read (1)
+
     }
     else if (stringIn[strBeg+2] == 'R'){    // Read request
 
@@ -491,4 +471,42 @@ void switch_init(void){
     P2IFG &= ~BIT6;
     _BIS_SR( GIE);                 // Global interrupt enable
 }
+int memory_mode(int setparam, int regStart, char * inVec, int byteNum){
 
+    //read\write ; what reg to start; inforvector; number of bytes;
+    char *Flash_ptr;
+    volatile char temp,k;
+
+    Flash_ptr = (char *) regStart;
+
+    if (setparam==0){   //Set the mode to active mode
+        //write to memory this mode
+        FCTL2 = FWKEY + FSSEL0 +
+                (FN1*16);             // MCLK/3 for Flash Timing Generator
+        FCTL1 = FWKEY + ERASE;                    // Set Erase bit
+        FCTL3 = FWKEY;                            // Clear Lock bit
+        *Flash_ptr = 1;                           // Dummy write to erase Flash segment
+
+        FCTL1 = FWKEY + WRT;                      // Set WRT bit for write operation
+        *Flash_ptr=0xAA;
+        for (k = 0;k<byteNum;k++){
+            temp = inVec[k];
+            *Flash_ptr = temp;
+            temp = *Flash_ptr;
+            Flash_ptr++;
+        }
+        FCTL1 = FWKEY;                            // Clear WRT bit
+        FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
+        return 0;
+    }
+    else if(setparam==1){      //Set mode to Actve mode
+        // read from memory
+       
+        for (k=0;k<byteNum;k++){
+            myVec[k] = *(Flash_ptr+k);
+
+        }
+
+        return 1;
+    }
+}
