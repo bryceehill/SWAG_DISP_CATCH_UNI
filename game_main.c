@@ -65,9 +65,10 @@ int main(void) {
     char disp_string[] = "   Welcome to the TechMatrix! Go to mtech.edu/electrical-engineering/ today!  |";//Green
     char two_char[11] = {0,0,0,0,0,0,0,0,0,0,0};
     char anim_frames[] = {0x01, 0x7F, 0x40, 0x40 ,0x7F, 0x01, 0x01, 0x7F, 0x40, 0x40, 0x7F, 0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01};
-    char game_layout[] = {0x00,0x00,0x00,0x00,0x67,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00};
+    char game_layout[] = {0x00,0x00,0x00,0x00,0x67,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x00};
     char game_safezone[] = {0x10,0x20,0x40,0x04,0x02,0x01,0x08,0x77,0x6F,0x5F,0x7B,0x7E,0x7D};
     int game_spd = 6;
+    int game_count = 0;
     char scrollLast=0;
     a_val = 0;
     while (scrollNum != '|')
@@ -149,6 +150,7 @@ int main(void) {
                 __delay_cycles(2000000);
             }
             scrollPos = 0;      //stand alone text scroll (mode 2)
+            game_spd = 6;
 
         }
         if (ModeSelect == 4){// Game
@@ -190,10 +192,22 @@ int main(void) {
                     }
                 }
                 scrollPos++;
-                if (scrollPos > (6*sizeof(game_layout)-24)){
+                if ((g+g2) > (sizeof(game_layout))){
                     scrollPos = 0;
                     g = 0;
-                    game_spd--;
+                    // g2 = 0;
+                    game_count++;
+
+                    if (game_count == 2)
+                    {
+                        game_spd--;
+                        game_count = 0;
+                    }
+
+                    if(game_spd == 0)
+                    {
+                        game_spd = 1;
+                    }
                 }
                 for (s = 0; s < 14; s++)
                 {
@@ -306,13 +320,13 @@ __interrupt void Port_1(void)
     if (P1IFG & BIT3){
         playerpos --;
         if (playerpos < -3){
-            playerpos = -3;
+            playerpos = 3;
         }
         P1IFG &= ~BIT3;                           // P1.4 IFG cleared
         while (P1IFG & BIT3)
-           {
-               _delay_cycles(40000);
-           }
+        {
+            _delay_cycles(40000);
+        }
     }
 }
 
@@ -325,7 +339,7 @@ __interrupt void Port_2(void)
     if (P2IFG & BIT6){
         playerpos ++;
         if (playerpos > 3){
-            playerpos = 3;
+            playerpos = -3;
         }
         P2IFG &= ~BIT6;                           // P1.0 IFG cleared
         while (P2IFG & BIT6)
