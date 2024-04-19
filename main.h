@@ -7,6 +7,8 @@
 
 #ifndef MAIN_H_
 #define MAIN_H_
+#define ButtonThreshold 15000
+
 //#pragma DATA_SECTION(mapArray,".myData");
 //#pragma DATA_ALIGN(mapArray,1);
 //  #pragma RETAIN(mapArray);

@@ -37,6 +37,11 @@
 
 #include "uart.h"
 
+
+//Button states vectors
+volatile char SWState[] = {1, 1, 1};
+volatile char StateChange[] = {0, 0, 0};
+
 /**
  * TXD on P1.1
  */
@@ -84,7 +89,7 @@ static volatile uint8_t txBitCount;
 static volatile unsigned int TXByte;
 
 /**
- * Value recieved once hasRecieved is set
+ * Value received once hasRecieved is set
  */
 static volatile unsigned int RXByte;
 
@@ -104,7 +109,6 @@ static volatile int txQueue=1;
 static volatile bool hasReceived = false;
 
 static volatile unsigned int part_val;
-
 
 //#define uart_max 100
 unsigned char tx_data_str_sw[uart_max], rx_data_str_sw[uart_max], rx_flag_sw=0, eos_flag_sw=0;
@@ -161,7 +165,7 @@ void uart_putc(uint8_t c)
         CCTL0 =  CCIE;        // Disable TX and enable interrupts
     }
     _BIS_SR( GIE);                 // Enter LPM0 w/ interrupt
-//    __delay_cycles(10000);
+    //    __delay_cycles(10000);
     //    P1OUT &=~ TXD;
     //    CCTL0 = CCIS_0 + OUTMOD_0 + CCIE + OUT; // Set signal, intial value, enable interrupts
     //
@@ -210,6 +214,28 @@ __interrupt void Port_1(void){
 
         RXByte = 0; 					// Initialize RXByte
         bitCount = 9; 					// Load Bit counter, 8 bits + start bit
+    }
+    if (P1IFG & BIT0){
+        P1IES ^= BIT0;
+        if(P1IN & BIT0){
+            SWState[1] = 1;//button is active
+        }
+        else{
+            SWState[1] = 0;//button is not active
+        }
+        StateChange[1] = 1;//button change has occurred
+        P1IFG &= ~BIT0;                           // P1.0 IFG cleared
+    }
+    if (P1IFG & BIT3){
+        P1IES ^= BIT3;
+        if(P1IN & BIT3){
+            SWState[0] = 1;//button is active
+        }
+        else{
+            SWState[0] = 0;//button is not active
+        }
+        StateChange[0] = 1;//button change has occurred
+        P1IFG &= ~BIT3;                           // P1.4 IFG cleared
     }
 }
 
@@ -276,3 +302,33 @@ __interrupt void Timer_A (void)
     }
 }
 
+
+// Port 2 interrupt service routine
+#pragma vector=PORT2_VECTOR
+__interrupt void Port_2(void)
+{
+    if (P2IFG & BIT6){
+        P2IES ^= BIT6;
+        if(P2IN & BIT6){
+            SWState[2] = 1;//button is active
+        }
+        else{
+            SWState[2] = 0;//button is not active
+        }
+        StateChange[2] = 1;//button change has occurred
+        P2IFG &= ~BIT6;                           // P1.0 IFG cleared
+    }
+
+}
+
+void SwitchStateGet(char *SwtchState, char *SWChange){//function to send the current states of the 3 pushbuttons
+    SwtchState[0] = SWState[0];//states for buttons
+    SwtchState[1] = SWState[1];
+    SwtchState[2] = SWState[2];
+    SWChange[0] = StateChange[0];//flags for changes in button states
+    SWChange[1] = StateChange[1];
+    SWChange[2] = StateChange[2];
+    StateChange[0] = 0;//reset state change flags
+    StateChange[1] = 0;
+    StateChange[2] = 0;
+}
