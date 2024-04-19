@@ -52,6 +52,7 @@ int main(void){
     uart_sw_init(); // Software uart init
     BCSCTL1 = CALBC1_16MHZ;      // Set range
     DCOCTL = CALDCO_16MHZ;      // SMCLK = DCO = 1MHz
+
     uint8_t c;
     int replyVal=0;
     while(1){
@@ -75,28 +76,31 @@ int main(void){
 
 
         }
+
         /*Checks the how long each of the buttons have been pressed once released, if the value exceeds the ButtonThreshlod
          *(defined in main.h) the button registers as a long press, otherwise it is a short one.
          */
         if(buttoncounter[0] < 0){
             buttoncounter[0]*=-1;//returns the button counter back to a positive value
             if(buttoncounter[0] > ButtonThreshold){//long press code for right button
-                swLFDiagCount = 5;//testing variable
+                swLFDiagCount++;//testing variable
             }
-            else{//short press code for right button
-                swLFDiagCount = 3;
+            else if(buttoncounter[0] < ButtonThreshold){//short press code for right button
+                swLFDiagCount++;
             }
+            buttoncounter[0] = 0;
         }
 
 
         if(buttoncounter[1] < 0){
             buttoncounter[1]*=-1;
-            if(buttoncounter[1] > ButtonThreshold){
-                //long press code for center button
+            if(buttoncounter[1] > ButtonThreshold){//long press code for center button
+                ModeSelect++;
             }
-            else{
+            else if(buttoncounter[1] < ButtonThreshold){
                 //short press code for center button
             }
+            buttoncounter[1] = 0;
         }
 
         if(buttoncounter[2] < 0){
@@ -104,11 +108,11 @@ int main(void){
             if(buttoncounter[2] > ButtonThreshold){
                 //long press code for left button
             }
-            else{
+            else if(buttoncounter[2] < ButtonThreshold){
                 //short press code for left button
             }
+            buttoncounter[2] = 0;
         }
-
 
 
     }
