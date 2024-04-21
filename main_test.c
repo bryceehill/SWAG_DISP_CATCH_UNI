@@ -40,8 +40,11 @@ char gridArray[5] = {};
 char currChar = ' ';
 int isrCount = 0,scrollCount = 0;
 int ModeSelect = 2;
-unsigned int swLFDiagCount = 2; swCNDiagCount = 2; swRTDiagCount = 2; // Counters for each time Left, Center, and Right Pushbuttons are pressed (used in Test Mode)
+unsigned int swLFDiagCount = 0; swCNDiagCount = 0; swRTDiagCount = 0; // Counters for each time Left, Center, and Right Pushbuttons are pressed (used in Test Mode)
 int a=0,k=0;
+int game_spd = 6;
+int game_count = 0;
+int playerpos = 0;
 
 int main(void){
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
@@ -52,6 +55,32 @@ int main(void){
     uart_sw_init(); // Software uart init
     BCSCTL1 = CALBC1_16MHZ;      // Set range
     DCOCTL = CALDCO_16MHZ;      // SMCLK = DCO = 1MHz
+
+    int player;
+    unsigned int g;
+    unsigned int g2;
+    unsigned int s;
+
+    int gameover;
+    int game_scroll = 0;
+
+
+    //text scroll and graphic display variables
+    int a_val, k_val, scrollPos=0, scrollNum, scrollMax, cat_val;
+    char disp_string[] = "   Welcome to the Tech-Matrix! Go to mtech.edu/electrical-engineering/ today!  |";//Green
+    char two_char[11] = {0,0,0,0,0,0,0,0,0,0,0};
+    char anim_frames[] = {0x01 , 0x7F, 0x40, 0x40 ,0x7F, 0x01, 0x01, 0x7F, 0x40, 0x40, 0x7F, 0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01};
+    char game_layout[] = {0x00,0x00,0x00,0x00,0x67,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x00};
+    char game_safezone[] = {0x10,0x20,0x40,0x04,0x02,0x01,0x08,0x77,0x6F,0x5F,0x7B,0x7E,0x7D};
+    //char anim_frames[] = {0x7F, 0x04, 0x18, 0x04, 0x7F, 0x7F, 0x7F,0x7F,0x7F,0x7F,0x7F, 0x04, 0x18, 0x04, 0x7F};
+    char scrollLast=0;
+    a_val = 0;
+    while (scrollNum != '|')
+        scrollNum = disp_string[a_val++];
+    scrollNum=a_val;
+    scrollMax = scrollNum*6;
+
+
 
     uint8_t c;
     int replyVal=0;
@@ -83,24 +112,33 @@ int main(void){
         if(buttoncounter[0] < 0){
             buttoncounter[0]*=-1;//returns the button counter back to a positive value
             if(buttoncounter[0] > ButtonThreshold){//long press code for right button
-                swLFDiagCount++;//testing variable
+                swRTDiagCount++;//testing variable
             }
             else if(buttoncounter[0] < ButtonThreshold){//short press code for right button
-                swLFDiagCount++;
+                playerpos --;
+                if (playerpos < -3){
+                    playerpos = 3;
+                }
             }
             buttoncounter[0] = 0;
+            swRTDiagCount++;//testing variable
         }
 
 
         if(buttoncounter[1] < 0){
             buttoncounter[1]*=-1;
             if(buttoncounter[1] > ButtonThreshold){//long press code for center button
-                ModeSelect++;
+                ModeSelect++;//move to next mode
+                scrollPos = 0;
+                if(ModeSelect>4){
+                    ModeSelect = 2;
+                }
             }
             else if(buttoncounter[1] < ButtonThreshold){
                 //short press code for center button
             }
             buttoncounter[1] = 0;
+            swCNDiagCount++;//testing variable
         }
 
         if(buttoncounter[2] < 0){
@@ -110,13 +148,163 @@ int main(void){
             }
             else if(buttoncounter[2] < ButtonThreshold){
                 //short press code for left button
+                playerpos ++;
+                if (playerpos > 3){
+                    playerpos = -3;
+                }
             }
             buttoncounter[2] = 0;
+            swLFDiagCount++;//testing variable
+        }
+
+        if (ModeSelect == 2){
+            // Stand alone text scroll mode (send)
+            if (scrollCount >= 2000) {
+                scrollCount = 0;
+                a_val = scrollPos / 6;
+                charMap(disp_string[a_val], two_char);
+                a_val = scrollPos/6;
+                charMap(disp_string[a_val + 1], two_char + 6);
+                a_val = scrollPos%6;
+                tx_data_str[0] = '%';
+                tx_data_str[1] = '*';
+                tx_data_str[2] = 'B';
+                tx_data_str[3] = '0';
+                tx_data_str[4] = '1';
+                tx_data_str[5] = 0x30 + (gridArray[0] >> 4);
+                tx_data_str[6] = 0x30 + (gridArray[0] & 0x0F);
+                uart_write_string(0, 7);
+
+                for (k_val = 0; k_val < 5; k_val++) {
+                    gridArray[k_val] = two_char[k_val + a_val];
+                }
+                scrollPos++;
+                if (scrollPos > scrollMax)
+                    scrollPos = 0;
+            }
         }
 
 
+
+        if (ModeSelect == 3){// Game
+            player = 0x08;
+            if (scrollCount >= 2000) {
+                scrollCount = 0;
+                g2 = scrollPos / game_spd;
+                // uart_write_string(0, 7);
+
+                for (g = 0; g < 5; g++) {
+                    gridArray[g] = game_layout[g + g2];
+                    gridArray[1] = player + game_layout[1 + g2];
+                    if (playerpos == 1){
+                        player = 0x10;
+                    }
+                    if (playerpos == 2){
+                        player = 0x20;
+                    }
+                    if (playerpos == 3){
+                        player = 0x40;
+                    }
+                    if (playerpos == 0){
+                        player = 0x08;
+                    }
+                    if (playerpos == -1){
+                        player = 0x04;
+                    }
+                    if (playerpos == -2){
+                        player = 0x02;
+                    }
+                    if (playerpos == -3){
+                        player = 0x01;
+                    }
+                }
+                scrollPos++;
+                if ((g+g2) > (sizeof(game_layout))){
+                    scrollPos = 0;
+                    g = 0;
+                    // g2 = 0;
+                    game_count++;
+
+                    if (game_count == 2)
+                    {
+                        game_spd--;
+                        game_count = 0;
+                    }
+
+                    if(game_spd == 0)
+                    {
+                        game_spd = 1;
+                    }
+                }
+                for (s = 0; s < 14; s++)
+                {
+                    if(game_safezone[s] == gridArray[1])
+                    {
+                        gameover = 0;
+                        break;
+                    }
+                    else
+                    {
+                        gameover = 1;
+                    }
+                }
+                if (gameover == 1)
+                {
+                    ModeSelect = -1;
+                }
+            }
+        }
+        if (ModeSelect == -1)//game over screen
+        {
+            unsigned int g;
+            scrollPos = 0;
+            scrollCount = 0;
+            playerpos = 0;
+            game_spd = 6;
+            for (g = 0; g < 3; g++)
+            {
+                gridArray[0] = 0x63;
+                gridArray[1] = 0x14;
+                gridArray[2] = 0x08;
+                gridArray[3] = 0x14;
+                gridArray[4] = 0x63;
+                _delay_cycles(8000000);
+                gridArray[0] = 0x00;
+                gridArray[1] = 0x00;
+                gridArray[2] = 0x00;
+                gridArray[3] = 0x00;
+                gridArray[4] = 0x00;
+                _delay_cycles(8000000);
+            }
+            ModeSelect = 3;
+        }
+        if (ModeSelect == 4){//Graphic display
+            int k;
+            for (k=0; k<30;k=k+5){
+                gridArray[0] = anim_frames[k+4];
+                gridArray[1] = anim_frames[k+3];
+                gridArray[2] = anim_frames[k+2];
+                gridArray[3] = anim_frames[k+1];
+                gridArray[4] = anim_frames[k];
+                char temp = gridArray[4];
+
+                //                tx_data_str[0] = '%';
+                //                tx_data_str[1] = '*';
+                //                tx_data_str[2] = 'B';
+                //                tx_data_str[3] = '0';
+                //                tx_data_str[4] = '1';
+                //                tx_data_str[5] = (gridArray[0] >> 4);
+                //                tx_data_str[6] = (gridArray[0] & 0x0F);
+                //                uart_write_string(0, 7);
+                __delay_cycles(2000000);
+            }
+        }
+        if(ModeSelect < 1){
+            ModeSelect = 2;//places Tech-Matrix into mode 2 if it ever falls not invalid mode #
+        }
     }
 }
+
 
 void shiftIn(char * arrIn, char * arrOut,int shiftNum, int inDir){
     // This takes the bytes from arrIn and puts them into arrout.  Direction is dependent upon inDir that can swap direction
