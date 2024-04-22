@@ -1,4 +1,4 @@
-#include <msp430.h> 
+#include <msp430.h>
 #include "serial_handler.h"
 #include "uart.h"
 #include "main.h"
@@ -70,8 +70,8 @@ int main(void){
     char disp_string[] = "   Welcome to the Tech-Matrix! Go to mtech.edu/electrical-engineering/ today!  |";//Green
     char two_char[11] = {0,0,0,0,0,0,0,0,0,0,0};
     char anim_frames[] = {0x01 , 0x7F, 0x40, 0x40 ,0x7F, 0x01, 0x01, 0x7F, 0x40, 0x40, 0x7F, 0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01};
-    char game_layout[] = {0x00,0x00,0x00,0x00,0x67,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x00};
-    char game_safezone[] = {0x10,0x20,0x40,0x04,0x02,0x01,0x08,0x77,0x6F,0x5F,0x7B,0x7E,0x7D};
+    char game_layout[] = {0x00,0x00,0x00,0x00,0x67,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x00};//anything not zero is an obstacle
+    char game_safezone[] = {0x10,0x20,0x40,0x04,0x02,0x01,0x08,0x77,0x6F,0x5F,0x7B,0x7E,0x7D};//if player column is not any of these, gameover
     //char anim_frames[] = {0x7F, 0x04, 0x18, 0x04, 0x7F, 0x7F, 0x7F,0x7F,0x7F,0x7F,0x7F, 0x04, 0x18, 0x04, 0x7F};
     char scrollLast=0;
     a_val = 0;
@@ -115,8 +115,8 @@ int main(void){
                 swRTDiagCount++;//testing variable
             }
             else if(buttoncounter[0] < ButtonThreshold){//short press code for right button
-                playerpos --;
-                if (playerpos < -3){
+                playerpos --;//moves player up
+                if (playerpos < -3){//wraps player back to bottom if its at the top
                     playerpos = 3;
                 }
             }
@@ -148,8 +148,8 @@ int main(void){
             }
             else if(buttoncounter[2] < ButtonThreshold){
                 //short press code for left button
-                playerpos ++;
-                if (playerpos > 3){
+                playerpos ++;//moves player down
+                if (playerpos > 3){//wraps player back to top if its at the bottom
                     playerpos = -3;
                 }
             }
@@ -190,13 +190,13 @@ int main(void){
             player = 0x08;
             if (scrollCount >= 2000) {
                 scrollCount = 0;
-                g2 = scrollPos / game_spd;
+                g2 = scrollPos / game_spd;//controls the speed of the game, smaller value makes it faster
                 // uart_write_string(0, 7);
 
                 for (g = 0; g < 5; g++) {
                     gridArray[g] = game_layout[g + g2];
-                    gridArray[1] = player + game_layout[1 + g2];
-                    if (playerpos == 1){
+                    gridArray[1] = player + game_layout[1 + g2];//player column
+                    if (playerpos == 1){//playerpos controls the position of the player
                         player = 0x10;
                     }
                     if (playerpos == 2){
@@ -219,19 +219,19 @@ int main(void){
                     }
                 }
                 scrollPos++;
-                if ((g+g2) > (sizeof(game_layout))){
+                if ((g+g2) > (sizeof(game_layout))){//game loop
                     scrollPos = 0;
                     g = 0;
                     // g2 = 0;
                     game_count++;
 
-                    if (game_count == 2)
+                    if (game_count == 2)//after 2 loops, speed up
                     {
                         game_spd--;
                         game_count = 0;
                     }
 
-                    if(game_spd == 0)
+                    if(game_spd == 0)//caps the speed
                     {
                         game_spd = 1;
                     }
@@ -248,7 +248,7 @@ int main(void){
                         gameover = 1;
                     }
                 }
-                if (gameover == 1)
+                if (gameover == 1)//if player position is not in a safezone then gameover
                 {
                     ModeSelect = -1;
                 }
@@ -261,7 +261,7 @@ int main(void){
             scrollCount = 0;
             playerpos = 0;
             game_spd = 6;
-            for (g = 0; g < 3; g++)
+            for (g = 0; g < 3; g++)//blinking X display
             {
                 gridArray[0] = 0x63;
                 gridArray[1] = 0x14;
@@ -276,7 +276,7 @@ int main(void){
                 gridArray[4] = 0x00;
                 _delay_cycles(8000000);
             }
-            ModeSelect = 3;
+            ModeSelect = 3;//back to game
         }
         if (ModeSelect == 4){//Graphic display
             int k;
