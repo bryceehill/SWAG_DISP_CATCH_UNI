@@ -1,4 +1,4 @@
-#include <msp430.h>
+#include <msp430.h> 
 #include "serial_handler.h"
 #include "uart.h"
 #include "main.h"
@@ -39,8 +39,10 @@ signed int buttoncounter[3];//vector for counting how long each button has been 
 char gridArray[5] = {};
 char currChar = ' ';
 int isrCount = 0,scrollCount = 0;
+int a_val, k_val, scrollPos=0, scrollNum, scrollMax, cat_val;
 int ModeSelect = 2;
 unsigned int swLFDiagCount = 0; swCNDiagCount = 0; swRTDiagCount = 0; // Counters for each time Left, Center, and Right Pushbuttons are pressed (used in Test Mode)
+int lockoutTimer = 0;
 int a=0,k=0;
 int game_spd = 6;
 int game_count = 0;
@@ -66,12 +68,12 @@ int main(void){
 
 
     //text scroll and graphic display variables
-    int a_val, k_val, scrollPos=0, scrollNum, scrollMax, cat_val;
+
     char disp_string[] = "   Welcome to the Tech-Matrix! Go to mtech.edu/electrical-engineering/ today!  |";//Green
     char two_char[11] = {0,0,0,0,0,0,0,0,0,0,0};
     char anim_frames[] = {0x01 , 0x7F, 0x40, 0x40 ,0x7F, 0x01, 0x01, 0x7F, 0x40, 0x40, 0x7F, 0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01,0x01,0x7F,0x40,0x40,0x7F,0x01};
-    char game_layout[] = {0x00,0x00,0x00,0x00,0x67,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x00};//anything not zero is an obstacle
-    char game_safezone[] = {0x10,0x20,0x40,0x04,0x02,0x01,0x08,0x77,0x6F,0x5F,0x7B,0x7E,0x7D};//if player column is not any of these, gameover
+    char game_layout[] = {0x00,0x00,0x00,0x00,0x67,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x4F,0x00,0x00,0x00,0x73,0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x00};
+    char game_safezone[] = {0x10,0x20,0x40,0x04,0x02,0x01,0x08,0x77,0x6F,0x5F,0x7B,0x7E,0x7D};
     //char anim_frames[] = {0x7F, 0x04, 0x18, 0x04, 0x7F, 0x7F, 0x7F,0x7F,0x7F,0x7F,0x7F, 0x04, 0x18, 0x04, 0x7F};
     char scrollLast=0;
     a_val = 0;
@@ -87,23 +89,35 @@ int main(void){
     while(1){
         if(eos_flag){
             __delay_cycles(1000);
-            serial_handler(rx_data_str , 0, rx_flag, tx_data_str);
+            replyVal = serial_handler(rx_data_str , 0, rx_flag, tx_data_str);
             if (replyVal>1)
                 uart_write_string(0,replyVal);
 
+            lockoutTimer = 0;//reset lockout
+            ModeSelect = 1;
             rx_flag = 0;
             eos_flag = 0;
 
+
         }
         if (eos_flag_sw){
-            serial_handler(rx_data_str_sw ,1, rx_flag_sw, tx_data_str_sw+1);  // THe +1 in this line and the line below is due to a SW uart Glitch IDK
+            replyVal = serial_handler(rx_data_str_sw ,1, rx_flag_sw, tx_data_str_sw+1);  // THe +1 in this line and the line below is due to a SW uart Glitch IDK
             if (replyVal)
                 uart_write_string_sw(0,replyVal+1);
 
+            lockoutTimer = 0;//reset lockout
+            ModeSelect = 1;
             rx_flag_sw = 0;
             eos_flag_sw = 0;
 
 
+        }
+
+        if (lockoutTimer > LOCKOUT_DURATION) {
+            lockoutTimer = LOCKOUT_DURATION+1;
+            if(ModeSelect == 1){
+                ModeSelect = 2;// if device is still in Mode 1 without receiving new data, put TechMatrix into Mode 2
+            }
         }
 
         /*Checks the how long each of the buttons have been pressed once released, if the value exceeds the ButtonThreshlod
@@ -115,8 +129,8 @@ int main(void){
                 swRTDiagCount++;//testing variable
             }
             else if(buttoncounter[0] < ButtonThreshold){//short press code for right button
-                playerpos --;//moves player up
-                if (playerpos < -3){//wraps player back to bottom if its at the top
+                playerpos --;
+                if (playerpos < -3){
                     playerpos = 3;
                 }
             }
@@ -148,8 +162,8 @@ int main(void){
             }
             else if(buttoncounter[2] < ButtonThreshold){
                 //short press code for left button
-                playerpos ++;//moves player down
-                if (playerpos > 3){//wraps player back to top if its at the bottom
+                playerpos ++;
+                if (playerpos > 3){
                     playerpos = -3;
                 }
             }
@@ -158,8 +172,9 @@ int main(void){
         }
 
         if (ModeSelect == 2){
-            // Stand alone text scroll mode (send)
+            // Stand alone text scroll mode
             if (scrollCount >= 2000) {
+                __delay_cycles(100000);
                 scrollCount = 0;
                 a_val = scrollPos / 6;
                 charMap(disp_string[a_val], two_char);
@@ -168,7 +183,7 @@ int main(void){
                 a_val = scrollPos%6;
                 tx_data_str[0] = '%';
                 tx_data_str[1] = '*';
-                tx_data_str[2] = 'B';
+                tx_data_str[2] = 'b';
                 tx_data_str[3] = '0';
                 tx_data_str[4] = '1';
                 tx_data_str[5] = 0x30 + (gridArray[0] >> 4);
@@ -190,13 +205,13 @@ int main(void){
             player = 0x08;
             if (scrollCount >= 2000) {
                 scrollCount = 0;
-                g2 = scrollPos / game_spd;//controls the speed of the game, smaller value makes it faster
+                g2 = scrollPos / game_spd;
                 // uart_write_string(0, 7);
 
                 for (g = 0; g < 5; g++) {
                     gridArray[g] = game_layout[g + g2];
-                    gridArray[1] = player + game_layout[1 + g2];//player column
-                    if (playerpos == 1){//playerpos controls the position of the player
+                    gridArray[1] = player + game_layout[1 + g2];
+                    if (playerpos == 1){
                         player = 0x10;
                     }
                     if (playerpos == 2){
@@ -219,19 +234,19 @@ int main(void){
                     }
                 }
                 scrollPos++;
-                if ((g+g2) > (sizeof(game_layout))){//game loop
+                if ((g+g2) > (sizeof(game_layout))){
                     scrollPos = 0;
                     g = 0;
                     // g2 = 0;
                     game_count++;
 
-                    if (game_count == 2)//after 2 loops, speed up
+                    if (game_count == 2)
                     {
                         game_spd--;
                         game_count = 0;
                     }
 
-                    if(game_spd == 0)//caps the speed
+                    if(game_spd == 0)
                     {
                         game_spd = 1;
                     }
@@ -248,7 +263,7 @@ int main(void){
                         gameover = 1;
                     }
                 }
-                if (gameover == 1)//if player position is not in a safezone then gameover
+                if (gameover == 1)
                 {
                     ModeSelect = -1;
                 }
@@ -261,7 +276,7 @@ int main(void){
             scrollCount = 0;
             playerpos = 0;
             game_spd = 6;
-            for (g = 0; g < 3; g++)//blinking X display
+            for (g = 0; g < 3; g++)
             {
                 gridArray[0] = 0x63;
                 gridArray[1] = 0x14;
@@ -276,7 +291,7 @@ int main(void){
                 gridArray[4] = 0x00;
                 _delay_cycles(8000000);
             }
-            ModeSelect = 3;//back to game
+            ModeSelect = 3;
         }
         if (ModeSelect == 4){//Graphic display
             int k;
@@ -288,19 +303,21 @@ int main(void){
                 gridArray[4] = anim_frames[k];
                 char temp = gridArray[4];
 
-                //                tx_data_str[0] = '%';
-                //                tx_data_str[1] = '*';
-                //                tx_data_str[2] = 'B';
-                //                tx_data_str[3] = '0';
-                //                tx_data_str[4] = '1';
-                //                tx_data_str[5] = (gridArray[0] >> 4);
-                //                tx_data_str[6] = (gridArray[0] & 0x0F);
-                //                uart_write_string(0, 7);
+                tx_data_str[0] = '%';
+                tx_data_str[1] = '*';
+                tx_data_str[2] = 'B';
+                tx_data_str[3] = '0';
+                tx_data_str[4] = '1';
+                tx_data_str[5] = (gridArray[0] >> 4);
+                tx_data_str[6] = (gridArray[0] & 0x0F);
+                uart_write_string(0, 7);
                 __delay_cycles(2000000);
             }
+            scrollPos = 0;      //stand alone text scroll (mode 2)
+
         }
         if(ModeSelect < 1){
-            ModeSelect = 2;//places Tech-Matrix into mode 2 if it ever falls not invalid mode #
+            ModeSelect = 2;//places Tech-Matrix into mode 2 if it ever falls into invalid mode #
         }
     }
 }
@@ -345,16 +362,17 @@ void shiftArr(char * arrIn,int byteNum,int shiftNum,int shiftDir){
 
 int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
     // Parse for the initial string and the end string
+    volatile char bytesIn[5];
     volatile int strBeg, strEnd,i,k,byteNum,byteRet,shiftNum,dispShift;
     volatile char tempChar;
     char cmpStr[2],byteOut[5],byteChar[5];
     cmpStr[0]='%';
     cmpStr[1]='*';
-    strBeg = strComp(stringIn,cmpStr,strLen+1,2);
+    strBeg = strComp(stringIn,&cmpStr,strLen+1,2);
     if (strBeg == 0xFFFF)
         return;
     cmpStr[0]=13;
-    strEnd = strComp(stringIn,cmpStr,strLen+2,1);
+    strEnd = strComp(stringIn,&cmpStr,strLen+2,1);
     if (strEnd == 0xFFFF)
         return;
     if (stringIn[strBeg+2] == 'b'){     // Bytes of data to display
@@ -430,6 +448,27 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
 
 
     }
+
+    if (stringIn[strBeg+2] == 'P'){  // Byte  "Push"
+        int offsetnum = 5;
+        byteNum = twoCharConv (stringIn+strBeg+3);
+        if(byteNum/2<offsetnum){offsetnum = byteNum/2;}
+        for(k=0;k<5;k++){
+            stringOut[k] = stringIn[k];
+        }
+        shiftIn(strBeg+stringIn+offsetnum+5, strBeg+stringOut+5, offsetnum, uartdir);
+        for(k=0;k<byteNum;k++){//if we ever do upstream, this code needs to be configured for it (currently downstream only)
+            stringOut[strBeg+5+offsetnum] = ((gridArray[k] & 0xF0) >> 4) + 0x30;
+            stringOut[strBeg+5+offsetnum] = ((gridArray[k] & 0x0F)) + 0x30;
+        }
+        for (k=0;k<byteNum/2;k++){
+            bytesIn[k] = (stringIn[strBeg+k*2+5]-0x30)<<4+(stringIn[strBeg+k*2+5]-0x30);
+        }
+        shiftIn(bytesIn, gridArray,byteNum/2, uartdir);
+        return strLen;
+
+    }
+
     if (stringIn[strBeg+2] == 'C'){    // Characters of data to display
         shiftIn(stringIn, stringOut, 5, 0); // copy first Five bytes no questions asked
         byteNum = twoCharConv (stringIn+strBeg+3);
@@ -699,6 +738,7 @@ __interrupt void Timer_A1 (void)
     P3OUT |= gridArray[isrCount]<<1;
     scrollCount++;
     isrCount++;
+    lockoutTimer ++;
 
     if (isrCount>4)
         isrCount=0;
