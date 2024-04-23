@@ -475,10 +475,12 @@ int memory_mode(int setparam, int regStart, char * inVec, int byteNum){
 
     //read\write ; what reg to start; inforvector; number of bytes;
     char *Flash_ptr;
+    char *Bytenum_ptr;
     volatile char temp,k;
 
-    Flash_ptr = (char *) regStart;
-
+    Flash_ptr = (char *) regStart+1;
+    ByteNum_ptr = (char *) regStart;
+    *ByteNum_ptr = byteNum;
     if (setparam==0){   //Set the mode to active mode
         //write to memory this mode
         FCTL2 = FWKEY + FSSEL0 +
