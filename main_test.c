@@ -319,6 +319,12 @@ int main(void){
         if(ModeSelect < 1){
             ModeSelect = 2;//places Tech-Matrix into mode 2 if it ever falls into invalid mode #
         }
+        if(ModeSelect == 5){ // User text message Scroll
+
+        }
+        if(ModeSelect == 6){ // User Graphic Scroll 
+            
+        }
     }
 }
 
