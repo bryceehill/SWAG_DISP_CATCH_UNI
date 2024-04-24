@@ -523,8 +523,37 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
     //            return byteNum+4;
     //
     //        }
-    //    else if (stringIn[strBeg+2] == 'F'){    // Write data to Flash Memory
+    else if (stringIn[strBeg+2] == 'F'){    // Write data to Flash Memory
+        int byteNum = stringIn[strBeg+3];   // number of bytes N
+        int byteLoc = stringIn[strBeg+4];    // location of writning bits M
+        int byteStart = stringIn[strBeg+5];  // location of first B
+        volatile char k;
+        int regStart;
+        volatile int mode;
 
+        int MAXCHARFLASH = 100;           // max amount of letters 100
+        int MAXGRAPHFLASH = 150;        // max amount of graphic frames ,,1 frame = 5 bytes,,
+
+        for (k = 0;k < byteNum;k++){
+            myVec[k] = stringIn[strBeg+5+k];
+
+        }
+
+        FCTL2 = FWKEY + FSSEL0 +
+                (FN1*16);             // MCLK/3 for Flash Timing Generator
+
+        if (byteLoc == 0){
+            regStart = regCHARStart;
+
+        }
+
+        else if (byteLoc == 1){
+            regStart = regGRAPHStart;
+
+        }
+
+        mode = memory_mode(0,regStart,myVec,byteNum);//  Open memory and write (0) or read (1)
+    }
     
     //        }
     //    else if (stringIn[strBeg+2] == 'R'){    // Read request
