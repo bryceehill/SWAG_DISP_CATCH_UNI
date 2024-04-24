@@ -13,6 +13,10 @@
 //#pragma DATA_ALIGN(mapArray,1);
 //  #pragma RETAIN(mapArray);
 //    __no_init const unsigned char  mapArray[] @ 0xFE00;
+
+#define regGRAPHStart 0x1000       // start for the character registers
+#define regCHARStart 0x1099       // start for the character registers
+
 const char mapArray[98][5] = {{0,0,0,0,0},      // Space
                               {0,0, 0x7D, 0, 0}, // Exclamation Mark
                               {0,0x60, 0, 0x60, 0}, // double quote
