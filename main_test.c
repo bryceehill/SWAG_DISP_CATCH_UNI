@@ -822,3 +822,44 @@ void switch_init(void){
     P2IFG &= ~BIT6;
     _BIS_SR( GIE);                 // Global interrupt enable
 }
+int memory_mode(int setparam, int regStart, char * inVec, int byteNum){
+
+    //read\write ; what reg to start; inforvector; number of bytes;
+    char *Flash_ptr;
+    char *Bytenum_ptr;
+    volatile char temp,k;
+
+    Flash_ptr = (char *) regStart+1;
+    ByteNum_ptr = (char *) regStart;
+    *ByteNum_ptr = byteNum;
+    if (setparam==0){   //Set the mode to active mode
+        //write to memory this mode
+        FCTL2 = FWKEY + FSSEL0 +
+                (FN1*16);             // MCLK/3 for Flash Timing Generator
+        FCTL1 = FWKEY + ERASE;                    // Set Erase bit
+        FCTL3 = FWKEY;                            // Clear Lock bit
+        *Flash_ptr = 1;                           // Dummy write to erase Flash segment
+
+        FCTL1 = FWKEY + WRT;                      // Set WRT bit for write operation
+        *Flash_ptr=0xAA;
+        for (k = 0;k<byteNum;k++){
+            temp = inVec[k];
+            *Flash_ptr = temp;
+            temp = *Flash_ptr;
+            Flash_ptr++;
+        }
+        FCTL1 = FWKEY;                            // Clear WRT bit
+        FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
+        return 0;
+    }
+    else if(setparam==1){      //Set mode to Actve mode
+        // read from memory
+       
+        for (k=0;k<byteNum;k++){
+            myVec[k] = *(Flash_ptr+k);
+
+        }
+
+        return 1;
+    }
+}
