@@ -47,7 +47,7 @@ int a=0,k=0;
 int game_spd = 6;
 int game_count = 0;
 int playerpos = 0;
-
+volatile char myVec[10];
 int main(void){
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
     led_init();
