@@ -319,12 +319,12 @@ int main(void){
         if(ModeSelect < 1){
             ModeSelect = 2;//places Tech-Matrix into mode 2 if it ever falls into invalid mode #
         }
-        if(ModeSelect == 5){ // User text message Scroll
+        // if(ModeSelect == 5){ // User text message Scroll
 
-        }
-        if(ModeSelect == 6){ // User Graphic Scroll 
+        // }
+        // if(ModeSelect == 6){ // User Graphic Scroll 
             
-        }
+        // }
     }
 }
 
@@ -524,29 +524,13 @@ int serial_handler ( char * stringIn, int uartdir,int strLen,char * stringOut){
     //
     //        }
     //    else if (stringIn[strBeg+2] == 'F'){    // Write data to Flash Memory
-    //        byteNum = stringIn[strBeg+3];   // number of bytes N
-    //        byteLoc = stringIn[strBeg+4];    // location of writing bits M
-    //        // flash_ptr = (char *) 0x1040;     // either 8 bits or 16 bits
-    //        if (byteLoc == 0){
-    //            Flash_ptr = (char *) 0x10FF; // pointer to available register to 0x1131 // 256 bytes 010FFh to 01000h
-    //            // code to erase whatever is in these available registers when user hits send on phone. 1 byte = 1 charcter , 1 graphic frame = 5 bytes, limits 50-scroll 200-character
-    //            FCTL1 = FWKEY + ERASE;                    // Set Erase bit
-    //            FCTL3 = FWKEY;                            // Clear Lock bit
-    //            *Flash_ptr = 0;                           // Dummy write to erase Flash segment
-    //
-    //            FCTL1 = FWKEY + WRT;                      // Set WRT bit for write operation
-    //            *Flash_ptr ++= 0xAA;
-    //            *Flash_ptr ++= 1;
-    //            FCTL1 = FWKEY;                            // Clear WRT bit
-    //            FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
+
+    
     //        }
-    //        else if (byteloc == 1){
-    //            flash_ptr = (char *) 0x1050; // pointer to available register
-    //        }
-    //        else if (stringIn[strBeg+2] == 'R'){    // Read request
+    //    else if (stringIn[strBeg+2] == 'R'){    // Read request
     //
     //        }
-    //        else if (stringIn[strBeg+2] == 'W'){    // Response from read request
+    //    else if (stringIn[strBeg+2] == 'W'){    // Response from read request
     //
     //        }
 
